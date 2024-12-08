@@ -266,7 +266,7 @@ class wait_op_model final : public wait_op
     {
         auto halloc = net::get_associated_allocator(handler);
         auto alloc  = typename std::allocator_traits<
-            decltype(halloc)>::template rebind_alloc<wait_op_model>(halloc);
+             decltype(halloc)>::template rebind_alloc<wait_op_model>(halloc);
         using traits = std::allocator_traits<decltype(alloc)>;
         auto pmem    = traits::allocate(alloc, 1);
 
@@ -422,7 +422,8 @@ class shared_state final
             return pair_t{ *p, {} };
 
         return pair_t{ std::make_exception_ptr(
-            future_error{ future_errc::unready_future }), {} };
+                           future_error{ future_errc::unready_future }),
+                       {} };
     }
 
     decltype(auto)
@@ -876,25 +877,24 @@ class future
         if (!shared_state_)
             throw future_error{ future_errc::no_state };
 
-        return boost::asio::
-            async_compose<CompletionToken, void(std::exception_ptr, T)>(
-                [shared_state = shared_state_,
-                 init         = false](auto&& self, error_code ec = {}) mutable
-                {
-                    if (!std::exchange(init, true))
-                        return shared_state->async_wait(std::move(self));
+        return net::async_compose<CompletionToken, void(std::exception_ptr, T)>(
+            [shared_state = shared_state_,
+             init         = false](auto&& self, error_code ec = {}) mutable
+            {
+                if (!std::exchange(init, true))
+                    return shared_state->async_wait(std::move(self));
 
-                    if (ec)
-                        return self.complete(
-                            std::make_exception_ptr(system_error(ec)), T{});
+                if (ec)
+                    return self.complete(
+                        std::make_exception_ptr(system_error(ec)), T{});
 
-                    auto ul = shared_state->internal_lock();
-                    auto rv = shared_state->try_extract();
-                    ul.unlock();
-                    self.complete(rv.eptr, std::move(rv.value));
-                },
-                token,
-                shared_state_->get_executor());
+                auto ul = shared_state->internal_lock();
+                auto rv = shared_state->try_extract();
+                ul.unlock();
+                self.complete(rv.eptr, std::move(rv.value));
+            },
+            token,
+            shared_state_->get_executor());
     }
 
     /// Creates a shared_future.

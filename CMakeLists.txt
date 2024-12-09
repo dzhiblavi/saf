@@ -10,19 +10,21 @@ include(GNUInstallDirs)
 add_library(saf INTERFACE)
 target_include_directories(saf INTERFACE include/)
 
-option(BUILD_EXAMPLES "" ON)
-option(BUILD_TESTING "" ON)
+option(SAF_BUILD_EXAMPLES "" ON)
+option(SAF_BUILD_TESTING "" ON)
 
-if(BUILD_EXAMPLES)
-    add_subdirectory(example)
+if(SAF_BUILD_EXAMPLES)
+  add_subdirectory(example)
 endif()
 
-if(BUILD_TESTING)
-    enable_testing()
-    add_subdirectory(test)
+if(SAF_BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(test)
 endif()
 
 # Install headers
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
+install(
+  DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING PATTERN "*.hpp")
+  FILES_MATCHING
+  PATTERN "*.hpp")
